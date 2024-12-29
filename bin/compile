@@ -4,37 +4,47 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 
-set -e
+set -e  # Exit immediately if a command fails.
 
-# Helper functions
 puts-step() {
   echo "-----> $*"
 }
 
-# Install TA-Lib C library
+error() {
+  echo " !     ERROR: $*" >&2
+  exit 1
+}
+
+# Step 1: Install TA-Lib C library
 puts-step "Installing TA-Lib C library"
 TALIB_SRC_URL="http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"
 TALIB_BUILD_DIR="$BUILD_DIR/ta-lib"
 TALIB_INSTALL_DIR="/app/.heroku/vendor/ta-lib"
 
-# Download and compile TA-Lib
 mkdir -p $TALIB_BUILD_DIR
-curl -fsSL $TALIB_SRC_URL | tar -xz -C $TALIB_BUILD_DIR --strip-components=1
-cd $TALIB_BUILD_DIR
-./configure --prefix=$TALIB_INSTALL_DIR --disable-static
-make
-make install
+puts-step "Downloading TA-Lib source code"
+curl -fsSL $TALIB_SRC_URL | tar -xz -C $TALIB_BUILD_DIR --strip-components=1 || error "Failed to download and extract TA-Lib source."
 
-# Update library path
+cd $TALIB_BUILD_DIR
+puts-step "Configuring TA-Lib"
+./configure --prefix=$TALIB_INSTALL_DIR --disable-static || error "Failed to configure TA-Lib."
+
+puts-step "Compiling TA-Lib"
+make || error "Failed to compile TA-Lib."
+
+puts-step "Installing TA-Lib"
+make install || error "Failed to install TA-Lib."
+
+# Step 2: Update environment variables
 export LD_LIBRARY_PATH="$TALIB_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 export CFLAGS="-I$TALIB_INSTALL_DIR/include"
 
-# Install Python dependencies
-puts-step "Installing Python requirements"
-pip install -r $BUILD_DIR/requirements.txt
+# Step 3: Install Python dependencies (excluding TA-Lib)
+puts-step "Installing Python dependencies"
+pip install -r $BUILD_DIR/requirements.txt || error "Failed to install Python dependencies."
 
-# Install TA-Lib Python wrapper
+# Step 4: Install TA-Lib Python wrapper
 puts-step "Installing TA-Lib Python wrapper"
-pip install TA-Lib
+pip install TA-Lib || error "Failed to install TA-Lib Python wrapper."
 
 puts-step "Buildpack installation complete"
