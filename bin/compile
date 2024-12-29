@@ -1,29 +1,40 @@
 #!/usr/bin/env bash
 
+BUILD_DIR=$1
 CACHE_DIR=$2
+ENV_DIR=$3
 
-source bin/utils
+set -e
 
-TALIB=$(/app/.heroku/python/bin/python -c 'import pkgutil; print(1 if pkgutil.find_loader("talib") else 0)')
-if [ "$TALIB" -eq "0" ]; then
-  PYTHON=$(ls /app/.heroku/python/include | grep -m 1 python)
+# Helper functions
+puts-step() {
+  echo "-----> $*"
+}
 
-  puts-step "Installing requirements with pip"
-  /app/.heroku/python/bin/pip install -r requirements.txt 2>&1 | cleanup | indent
+# Install TA-Lib C library
+puts-step "Installing TA-Lib C library"
+TALIB_SRC_URL="http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"
+TALIB_BUILD_DIR="$BUILD_DIR/ta-lib"
+TALIB_INSTALL_DIR="/app/.heroku/vendor/ta-lib"
 
-  puts-step "Installing TA-Lib library source code"
-  echo "Download & unpack..." | indent
-  wget -q http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz > /dev/null 2>&1
-  tar -xf ta-lib-0.4.0-src.tar.gz  && cd ta-lib > /dev/null 2>&1
-  echo "Compile..." | indent
-  ./configure --includedir=/app/.heroku/python/include/${PYTHON} --libdir=/app/.heroku/python/lib --bindir=/app/.heroku/python/bin > /dev/null 2>&1
-  make > /dev/null 2>&1
-  echo "Install..." | indent
-  make install > /dev/null 2>&1
-  echo "TA-Lib library successfully installed" | indent
+# Download and compile TA-Lib
+mkdir -p $TALIB_BUILD_DIR
+curl -fsSL $TALIB_SRC_URL | tar -xz -C $TALIB_BUILD_DIR --strip-components=1
+cd $TALIB_BUILD_DIR
+./configure --prefix=$TALIB_INSTALL_DIR --disable-static
+make
+make install
 
-  /app/.heroku/python/bin/pip install TA-Lib 2>&1 | cleanup | indent
+# Update library path
+export LD_LIBRARY_PATH="$TALIB_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
+export CFLAGS="-I$TALIB_INSTALL_DIR/include"
 
-  rm -rf $CACHE_DIR/.heroku/python/
-  cp -R /app/.heroku/python/ $CACHE_DIR/.heroku/
-fi
+# Install Python dependencies
+puts-step "Installing Python requirements"
+pip install -r $BUILD_DIR/requirements.txt
+
+# Install TA-Lib Python wrapper
+puts-step "Installing TA-Lib Python wrapper"
+pip install TA-Lib
+
+puts-step "Buildpack installation complete"
