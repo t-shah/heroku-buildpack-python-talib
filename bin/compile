@@ -35,14 +35,22 @@ make || error "Failed to compile TA-Lib."
 puts-step "Installing TA-Lib"
 make install || error "Failed to install TA-Lib."
 
-# Verify the installation and handle library name discrepancies
+# Verify and handle library name discrepancies
 puts-step "Verifying TA-Lib installation"
 if [ -f $TALIB_INSTALL_DIR/lib/libta_lib.so ]; then
   echo "Found libta_lib.so"
+  if [ ! -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
+    echo "Creating symlink: libta_lib.so -> libta-lib.so"
+    ln -s $TALIB_INSTALL_DIR/lib/libta_lib.so $TALIB_INSTALL_DIR/lib/libta-lib.so
+  fi
 elif [ -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
-  echo "Found libta-lib.so. Creating symlink to libta_lib.so for compatibility."
-  ln -s $TALIB_INSTALL_DIR/lib/libta-lib.so $TALIB_INSTALL_DIR/lib/libta_lib.so
+  echo "Found libta-lib.so"
+  if [ ! -f $TALIB_INSTALL_DIR/lib/libta_lib.so ]; then
+    echo "Creating symlink: libta-lib.so -> libta_lib.so"
+    ln -s $TALIB_INSTALL_DIR/lib/libta-lib.so $TALIB_INSTALL_DIR/lib/libta_lib.so
+  fi
 else
+  ls -l $TALIB_INSTALL_DIR/lib
   error "TA-Lib C library was not installed correctly. Missing libta_lib.so or libta-lib.so."
 fi
 
