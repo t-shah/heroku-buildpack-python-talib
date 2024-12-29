@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+cat <<EOF
+---
+config_vars:
+  LD_LIBRARY_PATH: "/app/.heroku/vendor/ta-lib/lib:\$LD_LIBRARY_PATH"
+  CFLAGS: "-I/app/.heroku/vendor/ta-lib/include"
+EOF
