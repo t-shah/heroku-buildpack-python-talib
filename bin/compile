@@ -4,7 +4,7 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 
-set -e  # Exit immediately if a command fails.
+set -e  # Exit immediately if a command exits with a non-zero status.
 
 puts-step() {
   echo "-----> $*"
@@ -15,7 +15,7 @@ error() {
   exit 1
 }
 
-# Step 1: Install TA-Lib C library
+# Install TA-Lib C library
 puts-step "Installing TA-Lib C library"
 TALIB_SRC_URL="http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"
 TALIB_BUILD_DIR="$BUILD_DIR/ta-lib"
@@ -35,16 +35,31 @@ make || error "Failed to compile TA-Lib."
 puts-step "Installing TA-Lib"
 make install || error "Failed to install TA-Lib."
 
-# Step 2: Update environment variables
+# Verify the installation and handle library name discrepancies
+puts-step "Verifying TA-Lib installation"
+if [ -f $TALIB_INSTALL_DIR/lib/libta_lib.so ]; then
+  echo "Found libta_lib.so"
+elif [ -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
+  echo "Found libta-lib.so. Creating symlink to libta_lib.so for compatibility."
+  ln -s $TALIB_INSTALL_DIR/lib/libta-lib.so $TALIB_INSTALL_DIR/lib/libta_lib.so
+else
+  error "TA-Lib C library was not installed correctly. Missing libta_lib.so or libta-lib.so."
+fi
+
+# Set environment variables for linking
 export LD_LIBRARY_PATH="$TALIB_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 export CFLAGS="-I$TALIB_INSTALL_DIR/include"
 
-# Step 3: Install Python dependencies (excluding TA-Lib)
+# Install Python dependencies (excluding TA-Lib)
 puts-step "Installing Python dependencies"
 pip install -r $BUILD_DIR/requirements.txt || error "Failed to install Python dependencies."
 
-# Step 4: Install TA-Lib Python wrapper
+# Install TA-Lib Python wrapper
 puts-step "Installing TA-Lib Python wrapper"
 pip install TA-Lib || error "Failed to install TA-Lib Python wrapper."
+
+# Verify the TA-Lib Python wrapper installation
+puts-step "Verifying TA-Lib Python wrapper installation"
+python -c "import talib; print(talib.get_functions())" || error "Failed to load TA-Lib Python wrapper."
 
 puts-step "Buildpack installation complete"
