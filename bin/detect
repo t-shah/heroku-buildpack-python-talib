@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Check if TA-Lib should be installed
-if grep -q "TA-Lib" requirements.txt 2>/dev/null; then
+if [ -f requirements.txt ]; then
   echo "Python TA-Lib app detected"
   exit 0
 else
