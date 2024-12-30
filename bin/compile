@@ -77,7 +77,7 @@ puts-step "Re-exporting LD_LIBRARY_PATH before installing TA-Lib Python wrapper"
 export LD_LIBRARY_PATH="$TALIB_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 
 puts-step "Installing TA-Lib Python wrapper"
-pip install TA-Lib || error "Failed to install TA-Lib Python wrapper."
+pip install TA-Lib==0.5.1 || error "Failed to install TA-Lib Python wrapper."
 
 # Verify the TA-Lib Python wrapper installation
 puts-step "Verifying TA-Lib Python wrapper installation"
