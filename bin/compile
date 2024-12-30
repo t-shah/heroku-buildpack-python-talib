@@ -17,7 +17,7 @@ error() {
 
 # Install TA-Lib C library
 puts-step "Installing TA-Lib C library"
-TALIB_SRC_URL="http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"
+TALIB_SRC_URL="https://github.com/TA-Lib/ta-lib/releases/download/v0.4.0/ta-lib-0.4.0-src.tar.gz"
 TALIB_BUILD_DIR="$BUILD_DIR/ta-lib"
 TALIB_INSTALL_DIR="/app/.heroku/vendor/ta-lib"
 
