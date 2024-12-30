@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-if [ -f requirements.txt ]; then
-  echo "Python TA-Lib app detected"
-  exit 0
-else
-  echo "Not a TA-Lib app"
-  exit 1
-fi
