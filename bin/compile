@@ -40,20 +40,20 @@ puts-step "Verifying TA-Lib installation"
 ls -l $TALIB_INSTALL_DIR/lib || error "Failed to list contents of TA-Lib library directory."
 
 # Handle library name discrepancies
-if [ -f $TALIB_INSTALL_DIR/lib/libta_lib.so ]; then
-  echo "Found libta_lib.so"
-  if [ ! -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
-    echo "Creating symlink: libta_lib.so -> libta-lib.so"
-    ln -s $TALIB_INSTALL_DIR/lib/libta_lib.so $TALIB_INSTALL_DIR/lib/libta-lib.so
-  fi
-elif [ -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
-  echo "Found libta-lib.so"
+if [ -f $TALIB_INSTALL_DIR/lib/libta_lib.so.0.0.0 ]; then
+  echo "Found libta_lib.so.0.0.0"
+  
+  # Ensure symlink creation
   if [ ! -f $TALIB_INSTALL_DIR/lib/libta_lib.so ]; then
-    echo "Creating symlink: libta-lib.so -> libta_lib.so"
-    ln -s $TALIB_INSTALL_DIR/lib/libta-lib.so $TALIB_INSTALL_DIR/lib/libta_lib.so
+    echo "Creating symlink: libta_lib.so.0.0.0 -> libta_lib.so"
+    ln -s $TALIB_INSTALL_DIR/lib/libta_lib.so.0.0.0 $TALIB_INSTALL_DIR/lib/libta_lib.so
+  fi
+  if [ ! -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
+    echo "Creating symlink: libta_lib.so.0.0.0 -> libta-lib.so"
+    ln -s $TALIB_INSTALL_DIR/lib/libta_lib.so.0.0.0 $TALIB_INSTALL_DIR/lib/libta-lib.so
   fi
 else
-  error "TA-Lib C library was not installed correctly. Missing libta_lib.so or libta-lib.so."
+  error "TA-Lib C library was not installed correctly. Missing libta_lib.so.0.0.0."
 fi
 
 # Update linker cache
@@ -73,6 +73,9 @@ puts-step "Installing Python dependencies"
 pip install -r $BUILD_DIR/requirements.txt || error "Failed to install Python dependencies."
 
 # Install TA-Lib Python wrapper
+puts-step "Re-exporting LD_LIBRARY_PATH before installing TA-Lib Python wrapper"
+export LD_LIBRARY_PATH="$TALIB_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
+
 puts-step "Installing TA-Lib Python wrapper"
 pip install TA-Lib || error "Failed to install TA-Lib Python wrapper."
 
