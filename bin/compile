@@ -35,8 +35,11 @@ make || error "Failed to compile TA-Lib."
 puts-step "Installing TA-Lib"
 make install || error "Failed to install TA-Lib."
 
-# Verify and handle library name discrepancies
+# Verify library installation
 puts-step "Verifying TA-Lib installation"
+ls -l $TALIB_INSTALL_DIR/lib || error "Failed to list contents of TA-Lib library directory."
+
+# Handle library name discrepancies
 if [ -f $TALIB_INSTALL_DIR/lib/libta_lib.so ]; then
   echo "Found libta_lib.so"
   if [ ! -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
@@ -50,15 +53,22 @@ elif [ -f $TALIB_INSTALL_DIR/lib/libta-lib.so ]; then
     ln -s $TALIB_INSTALL_DIR/lib/libta-lib.so $TALIB_INSTALL_DIR/lib/libta_lib.so
   fi
 else
-  ls -l $TALIB_INSTALL_DIR/lib
   error "TA-Lib C library was not installed correctly. Missing libta_lib.so or libta-lib.so."
 fi
 
-# Set environment variables for linking
+# Update linker cache
+puts-step "Running ldconfig to update linker cache"
+ldconfig -n $TALIB_INSTALL_DIR/lib || error "Failed to update linker cache for TA-Lib."
+
+# Check shared library visibility
+puts-step "Checking shared library visibility for linker"
+ldconfig -p | grep libta-lib || error "Shared library libta-lib.so not found in linker paths."
+
+# Set environment variables for linker
 export LD_LIBRARY_PATH="$TALIB_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 export CFLAGS="-I$TALIB_INSTALL_DIR/include"
 
-# Install Python dependencies (excluding TA-Lib)
+# Install Python dependencies
 puts-step "Installing Python dependencies"
 pip install -r $BUILD_DIR/requirements.txt || error "Failed to install Python dependencies."
 
